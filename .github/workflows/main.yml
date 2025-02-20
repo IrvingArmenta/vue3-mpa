@@ -13,7 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name }}
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -27,10 +27,14 @@ jobs:
       - name: Get previous tag
         id: prev-tag
         run: |
+          set -e
+          echo "Checking for previous tags..."
           if git describe --tags `git rev-list --tags --max-count=1` > /dev/null 2>&1; then
             prev_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+            echo "Previous tag found: $prev_tag"
             echo "PREV_TAG=$prev_tag" >> $GITHUB_ENV
           else
+            echo "No previous tag found."
             echo "PREV_TAG=no_tag_found" >> $GITHUB_ENV
 
       - name: Generate new tag
