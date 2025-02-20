@@ -13,7 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -41,7 +41,7 @@ jobs:
             new_tag="stg-0.0.0"
           else
             IFS='.-' read -r prefix major minor patch <<< "$prev_tag"
-            if [[ $patch -eq 9 ]]; then
+            if [ "$patch" -eq 9 ]; then
               new_patch=0
               new_minor=$((minor + 1))
             else
