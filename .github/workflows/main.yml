@@ -12,8 +12,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    environment: ${{ github.event.inputs.environment }}
     
     steps:
     - name: Set environment from branch
@@ -28,7 +26,7 @@ jobs:
       run: |
         echo "Deploying the site: ${{ vars.APP_URL }}"
 
-    - name: Deploy to ${{ github.event.inputs.environment }}
+    - name: Deploy to ${{ env.ENVIRONMENT }}
       run: |
-        echo "Deploying to ${{ github.event.inputs.environment }} environment"
+        echo "Deploying to ${{ env.ENVIRONMENT }} environment"
         # Your deploy script/commands here
