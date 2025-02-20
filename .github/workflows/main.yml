@@ -25,22 +25,30 @@ jobs:
       - name: Get previous tag
         id: prev-tag
         run: |
-          prev_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "::set-output name=PREV_TAG::$prev_tag"
+          if git describe --tags `git rev-list --tags --max-count=1` > /dev/null 2>&1; then
+            prev_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+            echo "::set-output name=PREV_TAG::$prev_tag"
+          else
+            echo "::set-output name=PREV_TAG::no_tag_found"
+          fi
 
       - name: Generate new tag
         id: new-tag
         run: |
           prev_tag=${{ steps.prev-tag.outputs.PREV_TAG }}
-          IFS='.-' read -r prefix major minor patch <<< "$prev_tag"
-          if [[ $patch -eq 9 ]]; then
-            new_patch=0
-            new_minor=$((minor + 1))
+          if [ "$prev_tag" == "no_tag_found" ]; then
+            new_tag="stg-0.0.0"
           else
-            new_patch=$((patch + 1))
-            new_minor=$minor
+            IFS='.-' read -r prefix major minor patch <<< "$prev_tag"
+            if [[ $patch -eq 9 ]]; then
+              new_patch=0
+              new_minor=$((minor + 1))
+            else
+              new_patch=$((patch + 1))
+              new_minor=$minor
+            fi
+            new_tag="${prefix}-${new_minor}.${new_patch}"
           fi
-          new_tag="${prefix}-${new_minor}.${new_patch}"
           echo "::set-output name=NEW_TAG::$new_tag"
 
       - name: Create new tag
@@ -54,7 +62,11 @@ jobs:
         run: |
           prev_tag=${{ steps.prev-tag.outputs.PREV_TAG }}
           new_tag=${{ steps.new-tag.outputs.NEW_TAG }}
-          log=$(git log --pretty=format:"%h - %s (%an, %ad)" $prev_tag..HEAD)
+          if [ "$prev_tag" == "no_tag_found" ]; then
+            log=$(git log --pretty=format:"%h - %s (%an, %ad)" HEAD)
+          else
+            log=$(git log --pretty=format:"%h - %s (%an, %ad)" $prev_tag..HEAD)
+          fi
           echo "::set-output name=body::${log}"
 
       - name: Create and publish release
