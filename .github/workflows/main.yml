@@ -2,13 +2,12 @@
 name: Deploy
 
 on:
+  push:
+    branches:
+      - main
+      - development
+      - staging
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: development
-        type: string
 
 jobs:
   deploy:
@@ -17,6 +16,11 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     
     steps:
+    - name: Set environment from branch
+      id: set_environment
+      run: |
+        echo "ENVIRONMENT=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
     - name: Checkout code
       uses: actions/checkout@v2
 
