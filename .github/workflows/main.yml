@@ -15,19 +15,63 @@ jobs:
     environment: ${{ github.ref_name }}
     
     steps:
-    # - name: Set environment from branch
-    #   id: set_environment
-    #   run: |
-    #     echo "ENVIRONMENT=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Show variable
+        run: |
+          echo "Deploying the site: ${{ vars.APP_URL }}"
 
-    - name: Show variable
-      run: |
-        echo "Deploying the site: ${{ vars.APP_URL }}"
+      - name: Get previous tag
+        id: prev-tag
+        run: |
+          prev_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "::set-output name=PREV_TAG::$prev_tag"
 
-    - name: Deploy to ${{ env.ENVIRONMENT }}
-      run: |
-        echo "Deploying to ${{ github.ref_name }} environment"
-        # Your deploy script/commands here
+      - name: Generate new tag
+        id: new-tag
+        run: |
+          prev_tag=${{ steps.prev-tag.outputs.PREV_TAG }}
+          IFS='.-' read -r prefix major minor patch <<< "$prev_tag"
+          if [[ $patch -eq 9 ]]; then
+            new_patch=0
+            new_minor=$((minor + 1))
+          else
+            new_patch=$((patch + 1))
+            new_minor=$minor
+          fi
+          new_tag="${prefix}-${new_minor}.${new_patch}"
+          echo "::set-output name=NEW_TAG::$new_tag"
+
+      - name: Create new tag
+        run: |
+          new_tag=${{ steps.new-tag.outputs.NEW_TAG }}
+          git tag $new_tag
+          git push origin $new_tag
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          prev_tag=${{ steps.prev-tag.outputs.PREV_TAG }}
+          new_tag=${{ steps.new-tag.outputs.NEW_TAG }}
+          log=$(git log --pretty=format:"%h - %s (%an, %ad)" $prev_tag..HEAD)
+          echo "::set-output name=body::${log}"
+
+      - name: Create and publish release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.new-tag.outputs.NEW_TAG }}
+          release_name: Staging Release ${{ steps.new-tag.outputs.NEW_TAG }}
+          body: |
+            Changes:
+            ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: true
+
+      - name: Deploy to ${{ github.ref_name }} environment
+        run: |
+          echo "Deploying to ${{ github.ref_name }} environment"
+          # Your deploy script/commands here
