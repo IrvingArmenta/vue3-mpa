@@ -12,13 +12,13 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: github.ref_name
+    environment: ${{ github.ref_name }}
     
     steps:
-    - name: Set environment from branch
-      id: set_environment
-      run: |
-        echo "ENVIRONMENT=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+    # - name: Set environment from branch
+    #   id: set_environment
+    #   run: |
+    #     echo "ENVIRONMENT=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
     - name: Checkout code
       uses: actions/checkout@v2
@@ -29,5 +29,5 @@ jobs:
 
     - name: Deploy to ${{ env.ENVIRONMENT }}
       run: |
-        echo "Deploying to ${{ env.ENVIRONMENT }} environment"
+        echo "Deploying to ${{ github.ref_name }} environment"
         # Your deploy script/commands here
