@@ -29,6 +29,7 @@ jobs:
            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
            tag-prefix: 'stg-'
            default-version: 'stg-0.0.0'
+           dry-run: true
 
       - name: Create new tag
         run: |
