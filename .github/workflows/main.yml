@@ -33,16 +33,20 @@ jobs:
 
       - name: Create new tag
         run: |
-          new_tag=${{ steps.semver-tags.outputs.semantic-version }}
+          new_tag="stg-${{ steps.semver-tags.outputs.semantic-version }}"
+          echo "NEW_TAG=$new_tag" >> "$GITHUB_ENV"
           git tag $new_tag
           git push origin $new_tag
 
       - name: Generate changelog
         id: changelog
         run: |
-          prev_tag=${{ steps.semver-tags.outputs.previous-version }}
-          new_tag=${{ steps.semver-tags.outputs.semantic-version }}
-          log=$(git log --pretty=format:"%h - %s (%an, %ad)" $prev_tag..HEAD)
+          prev_tag="${{ steps.semver-tags.outputs.previous-version }}"
+          if git log --pretty=format:"%h - %s (%an, %ad)" "$prev_tag..HEAD" > changelog.txt 2>/dev/null; then
+            log=$(cat changelog.txt)
+          else
+            log=""
+          fi
           echo "body=$log" >> "$GITHUB_ENV"
 
       - name: Create and publish release
@@ -51,8 +55,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.semver-tags.outputs.semantic-version }}
-          release_name: Staging Release ${{ steps.semver-tags.outputs.semantic-version }}
+          tag_name: ${{ env.NEW_TAG }}
+          release_name: Staging Release ${{ env.NEW_TAG }}
           body: |
             Changes:
             ${{ env.body }}
