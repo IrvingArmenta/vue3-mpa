@@ -8,6 +8,15 @@ on:
       - development
       - staging
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Select target branch'
+        required: true
+        type: choice
+        options:
+          - main
+          - development
+          - staging
 
 jobs:
   deploy:
