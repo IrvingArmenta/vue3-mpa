@@ -17,7 +17,8 @@ jobs:
     steps:
       - name: Logging
         run: |
-          echo "${{toJSON(github.event)}}"
+          echo "${{toJSON(github.event.commits[0])}}"
+          
       - name: Checkout code
         uses: actions/checkout@v4
 
