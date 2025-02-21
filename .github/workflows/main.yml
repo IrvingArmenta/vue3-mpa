@@ -45,22 +45,16 @@ jobs:
           if git log --pretty=format:"%h - %s (%an, %ad)" "$prev_tag..HEAD" > changelog.txt 2>/dev/null; then
             log=$(cat changelog.txt)
           else
-            log=""
+            log="--- no changes ---"
           fi
           echo "body=$log" >> "$GITHUB_ENV"
 
       - name: Create and publish release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.NEW_TAG }}
-          release_name: Staging Release ${{ env.NEW_TAG }}
-          body: |
-            Changes:
-            ${{ env.body }}
-          draft: false
+        uses: ncipollo/release-action@v1
+        with: 
+          name: "Staging release ${{ env.NEW_TAG }}"
+          tag: ${{ env.NEW_TAG }}
           prerelease: true
 
       - name: Deploy to ${{ github.ref_name }} environment
