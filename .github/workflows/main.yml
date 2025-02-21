@@ -29,8 +29,8 @@ jobs:
         uses: SOLIDSoftworks/semver-tags@v1
         with:
            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-           tag-prefix: 'stg'
-           default-version: '0.0.0'
+           tag-prefix: 'stg-'
+           default-version: 'stg-0.0.0'
 
       - name: Create new tag
         run: |
