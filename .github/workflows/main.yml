@@ -25,7 +25,7 @@ jobs:
           echo "Deploying the site: ${{ vars.APP_URL }}"
 
       - name: Increment version from repository's tags
-        id: tages_versioning
+        id: semver-tags
         uses: SOLIDSoftworks/semver-tags@v1
         with:
            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -34,15 +34,15 @@ jobs:
 
       - name: Create new tag
         run: |
-          new_tag=${{ steps.semver-tag.outputs.semantic-version }}
+          new_tag=${{ steps.semver-tags.outputs.semantic-version }}
           git tag $new_tag
           git push origin $new_tag
 
       - name: Generate changelog
         id: changelog
         run: |
-          prev_tag=${{ steps.semver-tag.outputs.previous-version }}
-          new_tag=${{ steps.semver-tag.outputs.semantic-version }}
+          prev_tag=${{ steps.semver-tags.outputs.previous-version }}
+          new_tag=${{ steps.semver-tags.outputs.semantic-version }}
           log=$(git log --pretty=format:"%h - %s (%an, %ad)" $prev_tag..HEAD)
           echo "body=$log" >> $GITHUB_ENV
 
@@ -52,8 +52,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.semver-tag.outputs.semantic-version }}
-          release_name: Staging Release ${{ steps.semver-tag.outputs.semantic-version }}
+          tag_name: ${{ steps.semver-tags.outputs.semantic-version }}
+          release_name: Staging Release ${{ steps.semver-tags.outputs.semantic-version }}
           body: |
             Changes:
             ${{ env.body }}
