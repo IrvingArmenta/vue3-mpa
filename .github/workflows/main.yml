@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all tags and history
 
       - name: Show variable
         run: |
@@ -34,7 +32,7 @@ jobs:
 
       - name: Create new tag
         run: |
-          new_tag=${{ steps.semver-tags.outputs.semantic-version }}
+          new_tag=${{ steps.semver-tags.outputs.core-version }}
           git tag $new_tag
           git push origin $new_tag
 
@@ -42,7 +40,7 @@ jobs:
         id: changelog
         run: |
           prev_tag=${{ steps.semver-tags.outputs.previous-version }}
-          new_tag=${{ steps.semver-tags.outputs.semantic-version }}
+          new_tag=${{ steps.semver-tags.outputs.core-version }}
           log=$(git log --pretty=format:"%h - %s (%an, %ad)" $prev_tag..HEAD)
           echo "body=$log" >> $GITHUB_ENV
 
@@ -52,8 +50,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.semver-tags.outputs.semantic-version }}
-          release_name: Staging Release ${{ steps.semver-tags.outputs.semantic-version }}
+          tag_name: ${{ steps.semver-tags.outputs.core-version }}
+          release_name: Staging Release ${{ steps.semver-tags.outputs.core-version }}
           body: |
             Changes:
             ${{ env.body }}
