@@ -12,7 +12,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
     
     steps:
       - name: Checkout code
@@ -33,7 +33,7 @@ jobs:
 
       - name: Create new tag
         run: |
-          new_tag="stg-${{ steps.semver-tags.outputs.semantic-version }}"
+          new_tag="stg-${{ steps.semver-tags.outputs.semantic-version }}" 
           echo "NEW_TAG=$new_tag" >> "$GITHUB_ENV"
           git tag $new_tag
           git push origin $new_tag
@@ -45,7 +45,7 @@ jobs:
           if git log --pretty=format:"%h - %s (%an, %ad)" "$prev_tag..HEAD" > changelog.txt 2>/dev/null; then
             log=$(cat changelog.txt)
           else
-            log="--- no changes ---"
+            log=$(github.event.head_commit.message)
           fi
           echo "body=$log" >> "$GITHUB_ENV"
 
