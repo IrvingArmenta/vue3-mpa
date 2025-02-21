@@ -49,7 +49,7 @@ jobs:
           if git log --pretty=format:"%h - %s (%an, %ad)" "$prev_tag..HEAD" > changelog.txt 2>/dev/null; then
             log=$(cat changelog.txt)
           else
-            log=${{ github.event.commits[0].message }}
+            log="${{ github.event.commits[0].message }}"
           fi
           echo "body=$log" >> "$GITHUB_ENV"
 
