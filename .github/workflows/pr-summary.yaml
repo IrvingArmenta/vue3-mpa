@@ -16,26 +16,29 @@ jobs:
           
       - name: Generate file changes summary
         env:
-         DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_KEY }}
         run: |
-         git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-         git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
-         DIFF_CONTENT=$(cat file_changes_summary.txt | jq -Rs '.')
-         curl -X POST "https://api.deepseek.com" \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
-         -d @- << EOF
-         {
-           "model": "deepseek-chat",
-           "messages": [
-             {"role": "system", "content": "You are a helpful assistant."},
-             {"role": "user", "content": "Please evaluate the following file changes:\n$DIFF_CONTENT"}
-           ],
-           "stream": false
-         }
-         EOF
-           echo "Deepseek API response:"
-           cat deepseek_summary.json
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
+          DIFF_CONTENT=$(cat file_changes_summary.txt | jq -Rs '.')
+          RESPONSE=$(curl -X POST "https://api.deepseek.com" \
+                 -H "Content-Type: application/json" \
+                 -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
+                 -d @- << EOF
+          {
+            "model": "deepseek-chat",
+            "messages": [
+              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "user", "content": "Please evaluate the following file changes:\n$DIFF_CONTENT"}
+            ],
+            "stream": false
+          }
+          EOF
+            )
+            echo "Deepseek API response:"
+            echo "$RESPONSE"
+            echo "$RESPONSE" > deepseek_summary.json
+        
 
 
       - name: Create Markdown summary
