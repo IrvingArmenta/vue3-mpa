@@ -19,3 +19,4 @@ jobs:
         uses: hustcer/deepseek-review@v1
         with:
           chat-token: ${{ secrets.DEEPSEEK_KEY }}
+          base-url: 'https://api.deepseek.com/chat/completions'
