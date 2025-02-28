@@ -29,7 +29,6 @@ jobs:
             "model": "deepseek-chat",
             "messages": [
               {"role": "system", "content": "You are a helpful assistant."},
-              {"role": "user", "content": "Please evaluate the following file changes:\n$DIFF_CONTENT"}
             ],
             "stream": false
           }
