@@ -20,7 +20,7 @@ jobs:
       run: |
         git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
         git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
-        curl -X POST "https://api.deepseek.ai/analyze" \
+        curl -X POST "https://api.deepseek.com" \
              -H "Content-Type: application/json" \
              -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
              -d @file_changes_summary.txt > deepseek_summary.json
