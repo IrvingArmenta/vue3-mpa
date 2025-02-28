@@ -16,7 +16,7 @@ jobs:
 
     - name: Generate file changes summary
       env:
-        DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_KEY }}
       run: |
         git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
         git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
