@@ -13,19 +13,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          
       - name: Generate file changes summary
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_KEY }}
+         DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_KEY }}
         run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
-          curl -X POST "https://api.deepseek.com" \
-                -H "Content-Type: application/json" \
-                -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
-                -d @file_changes_summary.txt -o deepseek_summary.json
-          echo "Deepseek API response:"
-          cat deepseek_summary.json
+         git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+         git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
+         DIFF_CONTENT=$(cat file_changes_summary.txt)
+         curl -X POST "https://api.deepseek.com/chat/completions" \
+         -H "Content-Type: application/json" \
+         -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
+         -d '{
+              "model": "deepseek-chat",
+              "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Please evaluate the following file changes:\n'"$DIFF_CONTENT"'"}
+              ],
+              "stream": false
+            }' -o deepseek_summary.json
+         echo "Deepseek API response:"
+         cat deepseek_summary.json
 
       - name: Create Markdown summary
         run: |
