@@ -21,7 +21,7 @@ jobs:
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           git diff --name-status origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }} > file_changes_summary.txt
           DIFF_CONTENT=$(cat file_changes_summary.txt | jq -Rs '.')
-          RESPONSE=$(curl -X POST "https://api.deepseek.com" \
+          RESPONSE=$(curl -X POST "https://api.deepseek.com/chat/completions" \
                  -H "Content-Type: application/json" \
                  -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
                  -d @- << EOF
