@@ -32,11 +32,13 @@ jobs:
 
     - name: Post summary to PR comment
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        COMMENT_BODY=$(cat summary.md)
-        COMMENT_URL=$(jq -r .pull_request.comments_url ${GITHUB_EVENT_PATH})
-        curl -H "Authorization: token $GITHUB_TOKEN" \
-             -H "Content-Type: application/json" \
-             -d "{\"body\":\"${COMMENT_BODY}\"}" \
-             $COMMENT_URL
+       COMMENT_BODY=$(cat summary.md)
+       COMMENT_URL=$(jq -r .pull_request.comments_url ${GITHUB_EVENT_PATH})
+       COMMENT_PAYLOAD=$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')
+       curl -H "Authorization: token $GITHUB_TOKEN" \
+         -H "Content-Type: application/json" \
+         -d "$COMMENT_PAYLOAD" \
+         $COMMENT_URL
+
