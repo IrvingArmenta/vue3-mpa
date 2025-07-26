@@ -1,22 +1,48 @@
-name: Code Review
-on:
-  pull_request_target:
-    types:
-      - opened      # Triggers when a PR is opened
-      - reopened    # Triggers when a PR is reopened
-      - synchronize # Triggers when a commit is pushed to the PR
+name: DeepSeek Code Review
 
-# fix: GraphQL: Resource not accessible by integration (addComment) error
-permissions:
-  pull-requests: write
+on:
+  pull_request:
+    types: [labeled]
 
 jobs:
-  setup-deepseek-review:
+  review-with-deepseek:
+    if: contains(github.event.pull_request.labels.*.name, 'ai:review')
     runs-on: ubuntu-latest
-    name: Code Review
+
     steps:
-      - name: DeepSeek Code Review
-        uses: hustcer/deepseek-review@v1
-        with:
-          chat-token: ${{ secrets.DEEPSEEK_KEY }}
-          base-url: 'https://api.deepseek.com'
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate PR Diff
+        id: diff
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+          DIFF=$(git diff $BASE $HEAD)
+          echo "$DIFF" > diff.patch
+          echo "patch=$DIFF" >> $GITHUB_OUTPUT
+
+      - name: Call DeepSeek API
+        id: review
+        run: |
+          BODY=$(jq -n --arg diff "$(cat diff.patch)" '{
+            model: "deepseek-chat",
+            messages: [
+              { "role": "system", "content": "You are a professional software engineer reviewing code changes." },
+              { "role": "user", "content": ("Please provide a concise and constructive code review for the following diff:\n" + $diff) }
+            ]
+          }')
+
+          curl -s https://api.deepseek.com/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.DEEPSEEK_KEY }}" \
+            -d "$BODY" > response.json
+
+          jq -r '.choices[0].message.content' response.json > review.txt
+
+      - name: Comment on Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "$(cat review.txt)"
