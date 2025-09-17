@@ -8,31 +8,74 @@ on:
       - development
       - staging
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Select target branch'
+        required: true
+        type: choice
+        options:
+          - main
+          - development
+          - staging
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
     if: |
       github.ref_name == 'main' || 
       github.ref_name == 'development' || 
       github.ref_name == 'staging'
       
-    environment: ${{ github.event.inputs.environment }}
-    
     steps:
-    - name: Set environment from branch
-      id: set_environment
-      run: |
-        echo "ENVIRONMENT=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Logging
+        run: |
+          echo "${{toJSON(github.event.commits[0].message)}}"
+          
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Show variable
+        run: |
+          echo "Deploying the site: ${{ vars.APP_URL }}"
 
-    - name: Show variable
-      run: |
-        echo "Deploying the site: ${{ vars.APP_URL }}"
+      - name: Increment version from repository's tags
+        id: semver-tags
+        uses: SOLIDSoftworks/semver-tags@v1
+        with:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+           tag-prefix: 'stg-'
+           default-version: 'stg-0.0.0'
+           dry-run: true
 
-    - name: Deploy to ${{ github.event.inputs.environment }}
-      run: |
-        echo "Deploying to ${{ github.event.inputs.environment }} environment"
-        # Your deploy script/commands here
+      - name: Create new tag
+        run: |
+          new_tag="stg-${{ steps.semver-tags.outputs.semantic-version }}" 
+          echo "NEW_TAG=$new_tag" >> "$GITHUB_ENV"
+          git tag $new_tag
+          git push origin $new_tag
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          prev_tag="${{ steps.semver-tags.outputs.previous-version }}"
+          if git log --pretty=format:"%h - %s (%an, %ad)" "$prev_tag..HEAD" > changelog.txt 2>/dev/null; then
+            log=$(cat changelog.txt)
+          else
+            log="${{ github.event.commits[0].message }}"
+          fi
+          echo "body=$log" >> "$GITHUB_ENV"
+
+      - name: Create and publish release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with: 
+          name: "Staging release ${{ env.NEW_TAG }}"
+          body: ${{ env.body }}
+          tag: ${{ env.NEW_TAG }}
+          prerelease: true
+
+      - name: Deploy to ${{ github.ref_name }} environment
+        run: |
+          echo "Deploying to ${{ github.ref_name }} environment"
+          # Your deploy script/commands here
